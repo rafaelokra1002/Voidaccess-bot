@@ -122,17 +122,15 @@ async function startBot() {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qr)}`;
       console.log('\n========================================');
       console.log('📲 ESCANEIE O QR CODE COM SEU WHATSAPP');
       console.log('========================================');
-      console.log('1. Copie o texto abaixo');
-      console.log('2. Acesse: https://qr.io/ ou https://www.qr-code-generator.com/');
-      console.log('3. Cole o texto e gere o QR Code');
-      console.log('4. Escaneie com WhatsApp > Dispositivos conectados > Conectar dispositivo');
+      console.log('Abra este link no navegador para ver o QR Code:');
+      console.log(qrUrl);
       console.log('========================================');
-      console.log('QR_TEXT_START');
-      console.log(qr);
-      console.log('QR_TEXT_END');
+      console.log('Escaneie com WhatsApp > Dispositivos conectados > Conectar dispositivo');
+      console.log('========================================\n');
       console.log('========================================\n');
     }
 
