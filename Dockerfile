@@ -13,9 +13,6 @@ RUN npm install --production && rm -rf ./node_modules/libsignal && cp -r ./temp-
 COPY src/ ./src/
 COPY eng.traineddata ./
 
-# Copiar sessão de autenticação Baileys (se existir)
-COPY auth_info/ ./auth_info/
-
 EXPOSE 3333
 
 CMD ["node", "src/bot.js"]

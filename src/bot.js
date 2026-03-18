@@ -137,7 +137,12 @@ async function startBot() {
       console.log(`❌ Conexão fechada: ${reason} (${statusCode})`);
 
       if (statusCode === DisconnectReason.loggedOut) {
-        console.log('🔒 Deslogado. Apague a pasta auth_info e escaneie novamente.');
+        console.log('🔒 Deslogado. Limpando auth_info e reiniciando para gerar novo QR...');
+        const authPath = path.join(__dirname, '..', 'auth_info');
+        if (fs.existsSync(authPath)) {
+          fs.rmSync(authPath, { recursive: true, force: true });
+        }
+        setTimeout(startBot, 3000);
         return;
       }
 
