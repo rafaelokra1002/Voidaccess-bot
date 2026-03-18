@@ -1,0 +1,9 @@
+node_modules
+.env
+auth_baileys
+*.log
+*.bak
+qr_response.json
+.wwebjs_auth
+.wwebjs_cache
+temp-libsignal/.git

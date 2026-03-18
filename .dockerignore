@@ -1,0 +1,8 @@
+node_modules
+.env
+auth_baileys
+*.log
+*.bak
+.git
+docker-compose.yml
+qr_response.json

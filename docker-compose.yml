@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: evolution-postgres
+    environment:
+      POSTGRES_USER: evolution
+      POSTGRES_PASSWORD: evolution123
+      POSTGRES_DB: evolution
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: evolution-redis
+    restart: unless-stopped
+
+  evolution-api:
+    image: atendai/evolution-api:latest
+    container_name: evolution-api
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "8080:8080"
+    environment:
+      - AUTHENTICATION_API_KEY=minha_chave_secreta_123
+      - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://evolution:evolution123@postgres:5432/evolution?schema=public
+      - DATABASE_CONNECTION_CLIENT_NAME=evolution_exchange
+      - DATABASE_SAVE_DATA_INSTANCE=true
+      - DATABASE_SAVE_DATA_NEW_MESSAGE=true
+      - DATABASE_SAVE_MESSAGE_UPDATE=true
+      - DATABASE_SAVE_DATA_CONTACTS=true
+      - DATABASE_SAVE_DATA_CHATS=true
+      - DATABASE_SAVE_DATA_LABELS=true
+      - DATABASE_SAVE_DATA_HISTORIC=true
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://redis:6379
+      - CACHE_REDIS_PREFIX_KEY=evolution
+      - CACHE_REDIS_SAVE_INSTANCES=false
+      - CACHE_LOCAL_ENABLED=false
+      - LOG_LEVEL=ERROR,WARN,INFO,DEBUG
+      - DEL_INSTANCE=false
+      - QRCODE_LIMIT=6
+      - WEBHOOK_GLOBAL_ENABLED=false
+      - CONFIG_SESSION_PHONE_CLIENT=VoidAccess
+      - CONFIG_SESSION_PHONE_NAME=Chrome
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
