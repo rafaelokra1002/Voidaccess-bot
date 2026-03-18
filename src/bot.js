@@ -119,6 +119,8 @@ async function startBot() {
     if (qr) {
       console.log('\n📲 Escaneie o QR Code abaixo com seu WhatsApp:\n');
       qrcode.generate(qr, { small: true });
+      console.log('\n📋 QR Code texto (copie e cole em https://www.qr-code-generator.com/):');
+      console.log(qr);
       console.log('');
     }
 
