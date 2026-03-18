@@ -117,11 +117,18 @@ async function startBot() {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
-      console.log('\n📲 Escaneie o QR Code abaixo com seu WhatsApp:\n');
-      qrcode.generate(qr, { small: true });
-      console.log('\n📋 QR Code texto (copie e cole em https://www.qr-code-generator.com/):');
+      console.log('\n========================================');
+      console.log('📲 ESCANEIE O QR CODE COM SEU WHATSAPP');
+      console.log('========================================');
+      console.log('1. Copie o texto abaixo');
+      console.log('2. Acesse: https://qr.io/ ou https://www.qr-code-generator.com/');
+      console.log('3. Cole o texto e gere o QR Code');
+      console.log('4. Escaneie com WhatsApp > Dispositivos conectados > Conectar dispositivo');
+      console.log('========================================');
+      console.log('QR_TEXT_START');
       console.log(qr);
-      console.log('');
+      console.log('QR_TEXT_END');
+      console.log('========================================\n');
     }
 
     if (connection === 'open') {
