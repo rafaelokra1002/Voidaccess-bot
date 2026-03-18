@@ -1,8 +1,9 @@
-node_modules
+/node_modules
 .env
 auth_baileys
 *.log
 *.bak
 .git
+temp-libsignal/.git
 docker-compose.yml
 qr_response.json
