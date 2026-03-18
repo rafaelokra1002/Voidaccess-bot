@@ -1,7 +1,11 @@
+console.log('[BOOT] Iniciando bot...');
 require('dotenv').config();
+console.log('[BOOT] dotenv carregado');
 const fs = require('fs');
 const path = require('path');
+console.log('[BOOT] Carregando Baileys...');
 const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion, Browsers, DisconnectReason, extractMessageContent, getContentType, downloadMediaMessage } = require('@whiskeysockets/baileys');
+console.log('[BOOT] Baileys carregado');
 const pino = require('pino');
 const qrcode = require('qrcode-terminal');
 const { createTest: createOkraTest } = require('./services/okra.service');
@@ -9,6 +13,7 @@ const { createTest: createWplayTest } = require('./services/wplay.service');
 const { registerMac } = require('./services/pop.service');
 const { createUser: createCreditoProUser } = require('./services/creditopro.service');
 const validateMac = require('./utils/validateMac');
+console.log('[BOOT] Todos os módulos carregados');
 
 // sessões dos usuários
 const sessions = {};
