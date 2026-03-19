@@ -251,7 +251,7 @@ async function startBot() {
           session.step = 1;
 
           await sendText(user,
-            `⚡ *Bem-vindo à VoidAccess Tech!*\n\nTrabalhamos com *IPTV, Sites, Bots e Sistemas* sob medida.\n\nQual o motivo do seu contato?\n\n1️⃣ 📺 IPTV\n2️⃣ 🌐 Criação de Sites\n3️⃣ 🤖 Bots / Automações\n4️⃣ 💻 Sistemas\n5️⃣ � Testar CréditoPro\n6️⃣ �👤 Falar com Atendente\n\n_Digite o número da opção desejada_`
+            `🚀 *Bem-vindo à VoidAccess Tech!*\n\nAutomatizamos negócios e aumentamos suas vendas com tecnologia.\n\nEscolha o que você quer fazer hoje:\n\n1️⃣ 📺 Assistir canais e filmes (IPTV)\n2️⃣ 🌐 Criar um site profissional\n3️⃣ 🤖 Automatizar meu WhatsApp (Bot)\n4️⃣ 💻 Criar sistema para meu negócio\n5️⃣ 💰 Testar o CréditoPro (empréstimos)\n6️⃣ 👤 Falar com um especialista\n\n_Digite o número da opção desejada_`
           );
           continue;
         }

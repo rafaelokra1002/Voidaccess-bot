@@ -273,16 +273,17 @@ async function processMessage(msg, contacts) {
 
     session.step = 1;
     await sendList(user,
-      '⚡ *Bem-vindo à VoidAccess Tech!*\n\nTrabalhamos com *IPTV, Sites, Bots e Sistemas* sob medida.\n\nEscolha o motivo do seu contato:',
+      '🚀 *Bem-vindo à VoidAccess Tech!*\n\nAutomatizamos negócios e aumentamos suas vendas com tecnologia.\n\nEscolha o que você quer fazer hoje:',
       '📋 Ver opções',
       [{
         title: 'Nossos Serviços',
         rows: [
-          { id: 'menu_1', title: '📺 IPTV', description: 'Canais, filmes e séries' },
-          { id: 'menu_2', title: '🌐 Criação de Sites', description: 'Sites profissionais sob medida' },
-          { id: 'menu_3', title: '🤖 Bots / Automações', description: 'Bots para WhatsApp e mais' },
-          { id: 'menu_4', title: '💻 Sistemas', description: 'Sistemas personalizados' },
-          { id: 'menu_5', title: '👤 Falar com Atendente', description: 'Atendimento humano' },
+          { id: 'menu_1', title: '📺 Assistir canais e filmes', description: 'IPTV com canais, filmes e séries' },
+          { id: 'menu_2', title: '🌐 Criar um site profissional', description: 'Sites sob medida para seu negócio' },
+          { id: 'menu_3', title: '🤖 Automatizar WhatsApp', description: 'Bot para WhatsApp e automações' },
+          { id: 'menu_4', title: '💻 Criar sistema', description: 'Sistema personalizado para seu negócio' },
+          { id: 'menu_5', title: '💰 Testar CréditoPro', description: 'Empréstimos facilitados' },
+          { id: 'menu_6', title: '👤 Falar com especialista', description: 'Atendimento humano' },
         ],
       }]
     );
