@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel - VoidAccess Tech Bot</title>
+  <style>
+    :root {
+      --bg:#0f1117;--bg2:#1a1d27;--bg3:#242836;--accent:#6c5ce7;--accent2:#a29bfe;
+      --green:#00b894;--red:#e17055;--yellow:#fdcb6e;--blue:#74b9ff;
+      --text:#dfe6e9;--text2:#b2bec3;--border:#2d3436;--radius:12px;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    .sidebar{position:fixed;left:0;top:0;width:250px;height:100vh;background:var(--bg2);border-right:1px solid var(--border);padding:20px 0;z-index:10;overflow-y:auto}
+    .sidebar-logo{padding:10px 24px 30px;font-size:18px;font-weight:700;color:var(--accent2);display:flex;align-items:center;gap:10px}
+    .nav-item{display:flex;align-items:center;gap:12px;padding:11px 24px;color:var(--text2);cursor:pointer;transition:.2s;font-size:13px;border-left:3px solid transparent}
+    .nav-item:hover{background:var(--bg3);color:var(--text)}
+    .nav-item.active{background:var(--bg3);color:var(--accent2);border-left-color:var(--accent)}
+    .nav-item .icon{font-size:16px;width:22px;text-align:center}
+    .main{margin-left:250px;padding:24px 32px;min-height:100vh}
+    .page-title{font-size:22px;font-weight:700;margin-bottom:6px}
+    .page-subtitle{color:var(--text2);font-size:13px;margin-bottom:24px}
+    .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px}
+    .card-title{font-size:15px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+    .card-title .badge{font-size:11px;background:var(--accent);padding:2px 8px;border-radius:20px;font-weight:400}
+    .form-group{margin-bottom:14px}
+    .form-group label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:500}
+    .form-group input,.form-group textarea,.form-group select{width:100%;padding:9px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;transition:.2s}
+    .form-group input:focus,.form-group textarea:focus,.form-group select:focus{outline:none;border-color:var(--accent)}
+    .form-group textarea{min-height:80px;resize:vertical}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+    .toggle-group{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+    .toggle-group:last-child{border-bottom:none}
+    .toggle-label{font-size:13px}
+    .toggle{position:relative;width:42px;height:22px}
+    .toggle input{opacity:0;width:0;height:0}
+    .toggle .slider{position:absolute;inset:0;background:var(--bg3);border-radius:22px;cursor:pointer;transition:.3s;border:1px solid var(--border)}
+    .toggle .slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:2px;background:var(--text2);border-radius:50%;transition:.3s}
+    .toggle input:checked+.slider{background:var(--accent);border-color:var(--accent)}
+    .toggle input:checked+.slider::before{transform:translateX(19px);background:#fff}
+    .btn{padding:9px 20px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;font-family:inherit}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-primary:hover{background:#5a4bd1}
+    .btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+    .btn-secondary:hover{background:var(--border)}
+    .btn-danger{background:var(--red);color:#fff}
+    .btn-danger:hover{background:#d35400}
+    .btn-success{background:var(--green);color:#fff}
+    .btn-group{display:flex;gap:10px;margin-top:16px}
+    .brands-table{width:100%;border-collapse:collapse}
+    .brands-table th,.brands-table td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);font-size:13px}
+    .brands-table th{color:var(--text2);font-weight:500;font-size:11px;text-transform:uppercase}
+    .brands-table td select{padding:5px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px}
+    .brands-table .btn-icon{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:3px 6px;border-radius:6px}
+    .brands-table .btn-icon:hover{background:rgba(225,112,85,.15)}
+    .add-row{display:flex;gap:8px;margin-top:10px}
+    .add-row input,.add-row select{padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px}
+    .add-row input{flex:1}
+    .log-list{max-height:400px;overflow-y:auto;font-family:'Cascadia Code','Fira Code',monospace;font-size:12px}
+    .log-entry{padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text2)}
+    .log-entry:hover{background:var(--bg3)}
+    .toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;z-index:1000;transform:translateY(100px);opacity:0;transition:.3s}
+    .toast.show{transform:translateY(0);opacity:1}
+    .toast.success{background:var(--green);color:#fff}
+    .toast.error{background:var(--red);color:#fff}
+    .section{display:none}
+    .section.active{display:block}
+    /* Status dots */
+    .status-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px}
+    .status-dot.green{background:var(--green)}
+    .status-dot.red{background:var(--red)}
+    .status-dot.yellow{background:var(--yellow)}
+    /* Stat cards */
+    .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+    .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;text-align:center}
+    .stat-card .stat-value{font-size:28px;font-weight:700;color:var(--accent2)}
+    .stat-card .stat-label{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase}
+    /* QR */
+    .qr-container{text-align:center;padding:20px}
+    .qr-container img{max-width:300px;border-radius:12px;border:2px solid var(--border)}
+    /* Chart */
+    .chart-bar{display:flex;align-items:flex-end;gap:4px;height:120px;padding:10px 0}
+    .chart-col{flex:1;background:var(--accent);border-radius:4px 4px 0 0;min-height:4px;position:relative;transition:.3s}
+    .chart-col:hover{background:var(--accent2)}
+    .chart-col .chart-tip{display:none;position:absolute;top:-24px;left:50%;transform:translateX(-50%);background:var(--bg3);padding:2px 8px;border-radius:4px;font-size:10px;white-space:nowrap}
+    .chart-col:hover .chart-tip{display:block}
+    /* Pie legend */
+    .pie-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px}
+    .pie-item{display:flex;align-items:center;gap:6px;font-size:12px}
+    .pie-color{width:12px;height:12px;border-radius:3px}
+    /* Login */
+    .login-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}
+    .login-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:40px;width:360px;text-align:center}
+    .login-box h2{margin-bottom:8px;color:var(--accent2)}
+    .login-box p{color:var(--text2);font-size:13px;margin-bottom:24px}
+    .login-box input{width:100%;padding:11px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;margin-bottom:12px;font-family:inherit}
+    .login-box input:focus{outline:none;border-color:var(--accent)}
+    .login-box .btn{width:100%;padding:12px;font-size:15px}
+    .login-error{color:var(--red);font-size:13px;margin-bottom:10px;display:none}
+    /* List items */
+    .list-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);font-size:13px}
+    .list-item:last-child{border-bottom:none}
+    /* Scrollbar */
+    ::-webkit-scrollbar{width:5px}
+    ::-webkit-scrollbar-track{background:var(--bg)}
+    ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+    @media(max-width:768px){
+      .sidebar{width:56px}
+      .sidebar-logo span:last-child{display:none}
+      .nav-item .label{display:none}
+      .nav-item{padding:11px 0;justify-content:center}
+      .main{margin-left:56px;padding:16px}
+      .stat-grid{grid-template-columns:1fr 1fr}
+      .form-row,.form-row-3{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <h2>VoidAccess Tech</h2>
+    <p>Acesse o painel de controle do bot</p>
+    <div class="login-error" id="loginError">Credenciais inválidas</div>
+    <input type="text" id="loginApiBase" placeholder="URL da API (ex: https://meubot.onrender.com)" style="font-size:12px">
+    <input type="text" id="loginUser" placeholder="Usuário" autocomplete="username">
+    <input type="password" id="loginPass" placeholder="Senha" autocomplete="current-password">
+    <button class="btn btn-primary" onclick="doLogin()">Entrar</button>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar" style="display:none">
+  <div class="sidebar-logo"><span>⚡</span> <span>VoidAccess</span></div>
+  <div class="nav-item active" data-section="dashboard"><span class="icon">📊</span><span class="label">Dashboard</span></div>
+  <div class="nav-item" data-section="qrcode"><span class="icon">📱</span><span class="label">QR Code</span></div>
+  <div class="nav-item" data-section="geral"><span class="icon">⚙️</span><span class="label">Geral</span></div>
+  <div class="nav-item" data-section="mensagens"><span class="icon">💬</span><span class="label">Mensagens</span></div>
+  <div class="nav-item" data-section="iptv"><span class="icon">📺</span><span class="label">IPTV / TV</span></div>
+  <div class="nav-item" data-section="servicos"><span class="icon">🔧</span><span class="label">APIs</span></div>
+  <div class="nav-item" data-section="menu"><span class="icon">📋</span><span class="label">Menu</span></div>
+  <div class="nav-item" data-section="horario"><span class="icon">⏰</span><span class="label">Horários</span></div>
+  <div class="nav-item" data-section="usuarios"><span class="icon">👥</span><span class="label">Usuários</span></div>
+  <div class="nav-item" data-section="sessoes"><span class="icon">🔗</span><span class="label">Sessões</span></div>
+  <div class="nav-item" data-section="massa"><span class="icon">📢</span><span class="label">Mensagem Massa</span></div>
+  <div class="nav-item" data-section="logs"><span class="icon">📋</span><span class="label">Logs</span></div>
+  <div class="nav-item" data-section="seguranca"><span class="icon">🔐</span><span class="label">Segurança</span></div>
+</div>
+
+<div class="main" id="mainContent" style="display:none">
+
+<!-- DASHBOARD -->
+<div class="section active" id="sec-dashboard">
+  <div style="display:flex;align-items:center;justify-content:space-between"><div class="page-title">Dashboard</div><button class="btn" id="pauseBtn" onclick="togglePause()" style="padding:10px 24px;font-size:14px;border-radius:10px">⏸️ Pausar Bot</button></div>
+  <div class="page-subtitle">Visão geral do bot em tempo real</div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-value" id="statStatus"><span class="status-dot red"></span>OFF</div><div class="stat-label">Status</div></div>
+    <div class="stat-card"><div class="stat-value" id="statUptime">0h</div><div class="stat-label">Uptime</div></div>
+    <div class="stat-card"><div class="stat-value" id="statToday">0</div><div class="stat-label">Atendimentos Hoje</div></div>
+    <div class="stat-card"><div class="stat-value" id="statTests">0</div><div class="stat-label">Testes Criados</div></div>
+  </div>
+  <div class="stat-grid" style="grid-template-columns:1fr 1fr">
+    <div class="stat-card"><div class="stat-value" id="statSessions">0</div><div class="stat-label">Sessões Ativas</div></div>
+    <div class="stat-card"><div class="stat-value" id="statMessages">0</div><div class="stat-label">Mensagens Recebidas</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📈 Atendimentos por Dia (últimos 30 dias)</div>
+    <div class="chart-bar" id="chartBar"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📊 Atendimentos por Tipo</div>
+    <div class="pie-legend" id="pieChart"></div>
+  </div>
+</div>
+
+<!-- QR CODE -->
+<div class="section" id="sec-qrcode">
+  <div class="page-title">QR Code</div>
+  <div class="page-subtitle">Escaneie com WhatsApp para conectar o bot</div>
+  <div class="card">
+    <div class="qr-container" id="qrContainer">
+      <p style="color:var(--text2)">Carregando...</p>
+    </div>
+  </div>
+</div>
+
+<!-- GERAL -->
+<div class="section" id="sec-geral">
+  <div class="page-title">Configurações Gerais</div>
+  <div class="page-subtitle">Ajustes básicos do bot</div>
+  <div class="card">
+    <div class="card-title">🤖 Bot</div>
+    <div class="form-row"><div class="form-group"><label>Nome do Bot</label><input type="text" id="botName"></div><div class="form-group"><label>Timeout sessão (min)</label><input type="number" id="sessionTimeout"></div></div>
+    <div class="form-row"><div class="form-group"><label>Máx. reconexões</label><input type="number" id="maxRetries"></div><div class="form-group"><label>Delay digitação (ms)</label><input type="number" id="typingDelay"></div></div>
+    <div class="form-group"><label>Limite de testes por número</label><input type="number" id="testLimitPerNumber"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🔑 Palavras-chave</div>
+    <div class="form-group"><label>Saudação (exatas, separadas por vírgula)</label><input type="text" id="greetingKeywords"></div>
+    <div class="form-group"><label>Saudação parcial (contém)</label><input type="text" id="greetingPartialKeywords"></div>
+    <div class="form-group"><label>Cancelar / Voltar</label><input type="text" id="cancelKeywords"></div>
+  </div>
+  <div class="btn-group"><button class="btn btn-primary" onclick="saveAll()">💾 Salvar</button></div>
+</div>
+
+<!-- MENSAGENS -->
+<div class="section" id="sec-mensagens">
+  <div class="page-title">Mensagens</div>
+  <div class="page-subtitle">Use *texto* para negrito, _texto_ para itálico, {name} {username} etc. para variáveis</div>
+  <div class="card">
+    <div class="card-title">📝 Menu Principal</div>
+    <div class="form-group"><label>Boas-vindas</label><textarea id="msg_welcome" rows="6"></textarea></div>
+    <div class="form-group"><label>Mensagem desconhecida</label><textarea id="msg_unknownMessage" rows="2"></textarea></div>
+    <div class="form-row"><div class="form-group"><label>Sessão expirada</label><input type="text" id="msg_sessionExpired"></div><div class="form-group"><label>Reiniciado</label><input type="text" id="msg_resetMessage"></div></div>
+    <div class="form-row"><div class="form-group"><label>Atendente</label><textarea id="msg_attendant" rows="2"></textarea></div><div class="form-group"><label>Erro genérico</label><input type="text" id="msg_errorGeneric"></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📺 IPTV</div>
+    <div class="form-group"><label>Menu IPTV</label><textarea id="msg_iptv" rows="5"></textarea></div>
+    <div class="form-row"><div class="form-group"><label>Perguntar nome</label><input type="text" id="msg_askName"></div><div class="form-group"><label>Teste já feito ({date})</label><textarea id="msg_testAlreadyDone" rows="2"></textarea></div></div>
+    <div class="form-group"><label>Perguntar marca ({name})</label><textarea id="msg_askBrand" rows="2"></textarea></div>
+    <div class="form-group"><label>Android detectado</label><textarea id="msg_androidDetected" rows="2"></textarea></div>
+    <div class="form-group"><label>Planos IPTV</label><textarea id="msg_iptvPlans" rows="2"></textarea></div>
+  </div>
+  <div class="card">
+    <div class="card-title">✅ Sucesso</div>
+    <div class="form-group"><label>Roku ({username},{password},{accessInfo})</label><textarea id="msg_rokuSuccess" rows="4"></textarea></div>
+    <div class="form-group"><label>Downloader ({brand},{username},{password},{accessInfo})</label><textarea id="msg_downloaderSuccess" rows="5"></textarea></div>
+    <div class="form-group"><label>Android foto ({mac})</label><textarea id="msg_androidSuccess" rows="4"></textarea></div>
+    <div class="form-group"><label>Android manual</label><textarea id="msg_androidSuccessManual" rows="3"></textarea></div>
+  </div>
+  <div class="card">
+    <div class="card-title">💳 CréditoPro</div>
+    <div class="form-row"><div class="form-group"><label>Perguntar nome</label><input type="text" id="msg_creditoProAskName"></div><div class="form-group"><label>Perguntar email ({name})</label><input type="text" id="msg_creditoProAskEmail"></div></div>
+    <div class="form-group"><label>Sucesso ({email},{password})</label><textarea id="msg_creditoProSuccess" rows="3"></textarea></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🔧 Serviços</div>
+    <div class="form-group"><label>Perguntar nome ({service})</label><textarea id="msg_serviceAskName" rows="2"></textarea></div>
+    <div class="form-group"><label>Perguntar descrição ({name},{service})</label><textarea id="msg_serviceAskDescription" rows="2"></textarea></div>
+    <div class="form-group"><label>Sucesso ({service},{name},{description})</label><textarea id="msg_serviceSuccess" rows="4"></textarea></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🚫 Extras</div>
+    <div class="form-row"><div class="form-group"><label>Número bloqueado</label><input type="text" id="msg_blocked"></div><div class="form-group"><label>Fora do horário</label><input type="text" id="msg_outsideHours"></div></div>
+  </div>
+  <div class="btn-group"><button class="btn btn-primary" onclick="saveAll()">💾 Salvar</button></div>
+</div>
+
+<!-- IPTV / BRANDS -->
+<div class="section" id="sec-iptv">
+  <div class="page-title">IPTV & Marcas de TV</div>
+  <div class="page-subtitle">Configure as marcas e seus sistemas</div>
+  <div class="card">
+    <div class="card-title">📺 Downloader</div>
+    <div class="form-row"><div class="form-group"><label>Código</label><input type="text" id="downloaderCode"></div><div class="form-group"><label>App</label><input type="text" id="downloaderAppName"></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📋 Marcas <span class="badge" id="brandsCount">0</span></div>
+    <table class="brands-table"><thead><tr><th>Marca</th><th>Sistema</th><th></th></tr></thead><tbody id="brandsTableBody"></tbody></table>
+    <div class="add-row"><input type="text" id="newBrandName" placeholder="Nova marca"><select id="newBrandSystem"><option value="android">Android</option><option value="roku">Roku</option><option value="downloader">Downloader</option></select><button class="btn btn-secondary" onclick="addBrand()">+ Adicionar</button></div>
+  </div>
+  <div class="btn-group"><button class="btn btn-primary" onclick="saveAll()">💾 Salvar</button></div>
+</div>
+
+<!-- APIs -->
+<div class="section" id="sec-servicos">
+  <div class="page-title">APIs</div>
+  <div class="page-subtitle">Parâmetros das APIs sem mexer no código</div>
+  <div class="card">
+    <div class="card-title">🎬 Wplay</div>
+    <div class="form-row"><div class="form-group"><label>Package P2P</label><input type="text" id="wplayPackageP2P"></div><div class="form-group"><label>Package IPTV</label><input type="text" id="wplayPackageIPTV"></div></div>
+    <div class="form-row"><div class="form-group"><label>Duração teste (h)</label><input type="number" id="wplayTestDuration"></div><div class="form-group"><label>Krator Package</label><input type="text" id="wplayKratorPackage"></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📡 Okra</div>
+    <div class="form-row-3"><div class="form-group"><label>Duração (h)</label><input type="text" id="okraTestDuration"></div><div class="form-group"><label>Plano</label><input type="text" id="okraPlano"></div><div class="form-group"><label>Adulto (0/1)</label><input type="text" id="okraAdulto"></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🔧 Nomes dos Serviços</div>
+    <div class="form-row-3"><div class="form-group"><label>Opção 2</label><input type="text" id="service2"></div><div class="form-group"><label>Opção 3</label><input type="text" id="service3"></div><div class="form-group"><label>Opção 4</label><input type="text" id="service4"></div></div>
+  </div>
+  <div class="btn-group"><button class="btn btn-primary" onclick="saveAll()">💾 Salvar</button></div>
+</div>
+
+<!-- MENU -->
+<div class="section" id="sec-menu">
+  <div class="page-title">Opções do Menu</div>
+  <div class="page-subtitle">Ligar/desligar opções</div>
+  <div class="card">
+    <div class="toggle-group"><span class="toggle-label">1️⃣ IPTV</span><label class="toggle"><input type="checkbox" id="opt_iptv"><span class="slider"></span></label></div>
+    <div class="toggle-group"><span class="toggle-label">2️⃣ Sites</span><label class="toggle"><input type="checkbox" id="opt_sites"><span class="slider"></span></label></div>
+    <div class="toggle-group"><span class="toggle-label">3️⃣ Bots</span><label class="toggle"><input type="checkbox" id="opt_bots"><span class="slider"></span></label></div>
+    <div class="toggle-group"><span class="toggle-label">4️⃣ Sistemas</span><label class="toggle"><input type="checkbox" id="opt_sistemas"><span class="slider"></span></label></div>
+    <div class="toggle-group"><span class="toggle-label">5️⃣ CréditoPro</span><label class="toggle"><input type="checkbox" id="opt_creditoPro"><span class="slider"></span></label></div>
+    <div class="toggle-group"><span class="toggle-label">6️⃣ Atendente</span><label class="toggle"><input type="checkbox" id="opt_atendente"><span class="slider"></span></label></div>
+  </div>
+  <div class="btn-group"><button class="btn btn-primary" onclick="saveAll()">💾 Salvar</button></div>
+</div>
+
+<!-- HORÁRIO -->
+<div class="section" id="sec-horario">
+  <div class="page-title">Horário de Atendimento</div>
+  <div class="page-subtitle">Configure quando o bot responde</div>
+  <div class="card">
+    <div class="card-title">⏰ Horário Comercial</div>
+    <div class="toggle-group"><span class="toggle-label">Ativar horário de atendimento</span><label class="toggle"><input type="checkbox" id="bhEnabled"><span class="slider"></span></label></div>
+    <div class="form-row" style="margin-top:14px"><div class="form-group"><label>Início</label><input type="text" id="bhStart" placeholder="08:00"></div><div class="form-group"><label>Fim</label><input type="text" id="bhEnd" placeholder="22:00"></div></div>
+    <div class="form-group"><label>Dias (0=Dom,1=Seg...6=Sáb, separados por vírgula)</label><input type="text" id="bhDays" placeholder="1,2,3,4,5,6"></div>
+    <div class="form-group"><label>Mensagem fora do horário</label><textarea id="bhMessage" rows="2"></textarea></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📢 Follow-up Automático</div>
+    <div class="toggle-group"><span class="toggle-label">Enviar mensagem após teste</span><label class="toggle"><input type="checkbox" id="fuEnabled"><span class="slider"></span></label></div>
+    <div class="form-group" style="margin-top:14px"><label>Delay (horas)</label><input type="number" id="fuDelay" placeholder="24"></div>
+    <div class="form-group"><label>Mensagem de follow-up</label><textarea id="fuMessage" rows="2"></textarea></div>
+  </div>
+  <div class="card">
+    <div class="card-title">⏳ Delay de Digitação</div>
+    <div class="form-group"><label>Tempo (ms) que o bot espera mostrando "digitando..."</label><input type="number" id="typingDelayField" placeholder="1500"></div>
+  </div>
+  <div class="btn-group"><button class="btn btn-primary" onclick="saveAll()">💾 Salvar</button></div>
+</div>
+
+<!-- USUÁRIOS -->
+<div class="section" id="sec-usuarios">
+  <div class="page-title">Gestão de Usuários</div>
+  <div class="page-subtitle">Whitelist, blacklist e histórico de testes</div>
+  <div class="card">
+    <div class="card-title">✅ Whitelist (se vazia, todos são aceitos)</div>
+    <div id="whitelistContainer"></div>
+    <div class="add-row"><input type="text" id="newWhitelist" placeholder="5511999999999"><button class="btn btn-success" onclick="addWhitelist()">+ Adicionar</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🚫 Blacklist (números bloqueados)</div>
+    <div id="blacklistContainer"></div>
+    <div class="add-row"><input type="text" id="newBlacklist" placeholder="5511999999999"><button class="btn btn-danger" onclick="addBlacklist()">+ Adicionar</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🧪 Histórico de Testes <button class="btn btn-danger" onclick="clearAllTests()" style="margin-left:auto;padding:5px 12px;font-size:11px">Limpar Todos</button></div>
+    <div id="testHistoryContainer" style="max-height:300px;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- SESSÕES -->
+<div class="section" id="sec-sessoes">
+  <div class="page-title">Sessões Ativas</div>
+  <div class="page-subtitle">Usuários sendo atendidos agora</div>
+  <div class="card">
+    <div class="card-title">🔗 Sessões <button class="btn btn-secondary" onclick="loadSessions()" style="margin-left:auto;padding:5px 12px;font-size:11px">🔄 Atualizar</button></div>
+    <div id="sessionsContainer"></div>
+  </div>
+</div>
+
+<!-- MENSAGEM EM MASSA -->
+<div class="section" id="sec-massa">
+  <div class="page-title">Mensagem em Massa</div>
+  <div class="page-subtitle">Envie mensagens para múltiplos contatos</div>
+  <div class="card">
+    <div class="card-title">📢 Enviar</div>
+    <div class="form-group"><label>Números (separados por vírgula, vazio = todos que já interagiram)</label><input type="text" id="massNumbers" placeholder="5511999999999, 5511888888888"></div>
+    <div class="form-group"><label>Mensagem</label><textarea id="massMessage" rows="4" placeholder="Digite a mensagem..."></textarea></div>
+    <div class="btn-group"><button class="btn btn-primary" onclick="sendMass()">📤 Enviar</button></div>
+    <div id="massResult" style="margin-top:12px;font-size:13px;color:var(--text2)"></div>
+  </div>
+</div>
+
+<!-- LOGS -->
+<div class="section" id="sec-logs">
+  <div class="page-title">Logs</div>
+  <div class="page-subtitle">Últimos 200 atendimentos</div>
+  <div class="card">
+    <div class="card-title">📋 Atendimentos <div style="margin-left:auto;display:flex;gap:8px"><button class="btn btn-secondary" onclick="loadLogs()" style="padding:5px 12px;font-size:11px">🔄</button><button class="btn btn-success" onclick="exportLogs()" style="padding:5px 12px;font-size:11px">📥 CSV</button></div></div>
+    <div class="log-list" id="logList"><div class="log-entry">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- SEGURANÇA -->
+<div class="section" id="sec-seguranca">
+  <div class="page-title">Segurança</div>
+  <div class="page-subtitle">Login do painel e rate limit</div>
+  <div class="card">
+    <div class="card-title">🔐 Login do Painel</div>
+    <div class="form-row"><div class="form-group"><label>Usuário</label><input type="text" id="panelUsername"></div><div class="form-group"><label>Senha</label><input type="text" id="panelPassword"></div></div>
+    <div class="form-group"><label>Porta do Painel</label><input type="number" id="panelPort"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">⚡ Rate Limit</div>
+    <div class="toggle-group"><span class="toggle-label">Ativar rate limit por número</span><label class="toggle"><input type="checkbox" id="rlEnabled"><span class="slider"></span></label></div>
+    <div class="form-group" style="margin-top:14px"><label>Máx. mensagens por minuto (por número)</label><input type="number" id="rlMax" placeholder="30"></div>
+  </div>
+  <div class="btn-group"><button class="btn btn-primary" onclick="saveAll()">💾 Salvar</button></div>
+</div>
+
+</div><!-- /main -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API_BASE=localStorage.getItem('api_base')||'';
+let config={};
+let authToken=localStorage.getItem('panel_token')||'';
+
+// Check auth on load
+if(authToken){document.getElementById('loginOverlay').style.display='none';document.getElementById('sidebar').style.display='';document.getElementById('mainContent').style.display='';init()}
+// Pre-fill API base on login page
+document.getElementById('loginApiBase').value=API_BASE;
+
+async function doLogin(){
+  const u=document.getElementById('loginUser').value;
+  const p=document.getElementById('loginPass').value;
+  const base=document.getElementById('loginApiBase').value.replace(/\/+$/,'');
+  localStorage.setItem('api_base',base);
+  try{
+    const r=await fetch((base||'')+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    const d=await r.json();
+    if(d.success){
+      authToken=d.token;localStorage.setItem('panel_token',authToken);
+      location.reload();
+      init();
+    }else{document.getElementById('loginError').style.display='block'}
+  }catch{document.getElementById('loginError').style.display='block'}
+}
+
+document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+
+function api(url,opts={}){
+  opts.headers={...opts.headers,'x-auth-token':authToken,'Content-Type':'application/json'};
+  return fetch(API_BASE+url,opts).then(r=>{if(r.status===401){localStorage.removeItem('panel_token');location.reload()}return r});
+}
+
+// Nav
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click',()=>{
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    item.classList.add('active');
+    const sec=item.dataset.section;
+    document.getElementById('sec-'+sec).classList.add('active');
+    if(sec==='logs')loadLogs();
+    if(sec==='sessoes')loadSessions();
+    if(sec==='usuarios'){loadWhitelist();loadBlacklist();loadTestHistory()}
+    if(sec==='dashboard')loadDashboard();
+    if(sec==='qrcode')loadQR();
+  });
+});
+
+function showToast(m,t='success'){const el=document.getElementById('toast');el.textContent=m;el.className='toast '+t+' show';setTimeout(()=>el.classList.remove('show'),3000)}
+function escapeHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+async function init(){await loadConfig();loadDashboard();setInterval(loadDashboard,10000)}
+
+// ---- CONFIG ----
+async function loadConfig(){
+  try{const r=await api('/api/config');config=await r.json();populateForm()}
+  catch{showToast('Erro ao carregar config','error')}
+}
+
+const msgFields=['welcome','unknownMessage','sessionExpired','resetMessage','attendant','errorGeneric','iptv','askName','askBrand','androidDetected','testAlreadyDone','iptvPlans','rokuSuccess','downloaderSuccess','androidSuccess','androidSuccessManual','creditoProAskName','creditoProAskEmail','creditoProSuccess','serviceAskName','serviceAskDescription','serviceSuccess','blocked','outsideHours'];
+
+function populateForm(){
+  document.getElementById('botName').value=config.botName||'';
+  document.getElementById('sessionTimeout').value=config.sessionTimeout||10;
+  document.getElementById('maxRetries').value=config.maxRetries||5;
+  document.getElementById('typingDelay').value=config.typingDelay||0;
+  document.getElementById('testLimitPerNumber').value=config.testLimitPerNumber||1;
+  document.getElementById('greetingKeywords').value=(config.greetingKeywords||[]).join(', ');
+  document.getElementById('greetingPartialKeywords').value=(config.greetingPartialKeywords||[]).join(', ');
+  document.getElementById('cancelKeywords').value=(config.cancelKeywords||[]).join(', ');
+  const m=config.messages||{};
+  msgFields.forEach(k=>{const el=document.getElementById('msg_'+k);if(el)el.value=m[k]||''});
+  document.getElementById('downloaderCode').value=config.downloader?.code||'';
+  document.getElementById('downloaderAppName').value=config.downloader?.appName||'';
+  renderBrandsTable();
+  document.getElementById('wplayPackageP2P').value=config.wplay?.packageP2P||'';
+  document.getElementById('wplayPackageIPTV').value=config.wplay?.packageIPTV||'';
+  document.getElementById('wplayTestDuration').value=config.wplay?.testDuration||4;
+  document.getElementById('wplayKratorPackage').value=config.wplay?.kratorPackage||'';
+  document.getElementById('okraTestDuration').value=config.okra?.testDuration||'';
+  document.getElementById('okraPlano').value=config.okra?.plano||'';
+  document.getElementById('okraAdulto').value=config.okra?.adulto||'';
+  document.getElementById('service2').value=config.services?.['2']||'';
+  document.getElementById('service3').value=config.services?.['3']||'';
+  document.getElementById('service4').value=config.services?.['4']||'';
+  const o=config.menuOptions||{};
+  ['iptv','sites','bots','sistemas','creditoPro','atendente'].forEach(k=>document.getElementById('opt_'+k).checked=o[k]!==false);
+  // Horário
+  const bh=config.businessHours||{};
+  document.getElementById('bhEnabled').checked=!!bh.enabled;
+  document.getElementById('bhStart').value=bh.start||'08:00';
+  document.getElementById('bhEnd').value=bh.end||'22:00';
+  document.getElementById('bhDays').value=(bh.days||[]).join(',');
+  document.getElementById('bhMessage').value=bh.offlineMessage||'';
+  const fu=config.followUp||{};
+  document.getElementById('fuEnabled').checked=!!fu.enabled;
+  document.getElementById('fuDelay').value=fu.delayHours||24;
+  document.getElementById('fuMessage').value=fu.message||'';
+  document.getElementById('typingDelayField').value=config.typingDelay||0;
+  // Segurança
+  const p=config.panel||{};
+  document.getElementById('panelUsername').value=p.username||'admin';
+  document.getElementById('panelPassword').value=p.password||'';
+  document.getElementById('panelPort').value=p.port||3010;
+  const rl=config.rateLimit||{};
+  document.getElementById('rlEnabled').checked=!!rl.enabled;
+  document.getElementById('rlMax').value=rl.maxPerMinute||30;
+}
+
+function renderBrandsTable(){
+  const tb=document.getElementById('brandsTableBody');
+  const brands=config.tvBrands||{};
+  const entries=Object.entries(brands);
+  document.getElementById('brandsCount').textContent=entries.length;
+  tb.innerHTML=entries.map(([b,s])=>`<tr><td>${escapeHtml(b)}</td><td><select onchange="updateBrand('${escapeHtml(b)}',this.value)"><option value="android" ${s==='android'?'selected':''}>Android</option><option value="roku" ${s==='roku'?'selected':''}>Roku</option><option value="downloader" ${s==='downloader'?'selected':''}>Downloader</option></select></td><td><button class="btn-icon" onclick="removeBrand('${escapeHtml(b)}')" title="Remover">🗑️</button></td></tr>`).join('');
+}
+function updateBrand(b,s){config.tvBrands[b]=s}
+function removeBrand(b){delete config.tvBrands[b];renderBrandsTable()}
+function addBrand(){const n=document.getElementById('newBrandName').value.trim().toLowerCase(),s=document.getElementById('newBrandSystem').value;if(!n)return showToast('Digite a marca','error');if(!config.tvBrands)config.tvBrands={};config.tvBrands[n]=s;document.getElementById('newBrandName').value='';renderBrandsTable()}
+
+function collectFormData(){
+  config.botName=document.getElementById('botName').value;
+  config.sessionTimeout=parseInt(document.getElementById('sessionTimeout').value)||10;
+  config.maxRetries=parseInt(document.getElementById('maxRetries').value)||5;
+  config.typingDelay=parseInt(document.getElementById('typingDelay').value)||0;
+  config.testLimitPerNumber=parseInt(document.getElementById('testLimitPerNumber').value)||1;
+  config.greetingKeywords=document.getElementById('greetingKeywords').value.split(',').map(s=>s.trim()).filter(Boolean);
+  config.greetingPartialKeywords=document.getElementById('greetingPartialKeywords').value.split(',').map(s=>s.trim()).filter(Boolean);
+  config.cancelKeywords=document.getElementById('cancelKeywords').value.split(',').map(s=>s.trim()).filter(Boolean);
+  if(!config.messages)config.messages={};
+  msgFields.forEach(k=>{const el=document.getElementById('msg_'+k);if(el)config.messages[k]=el.value});
+  config.downloader={code:document.getElementById('downloaderCode').value,appName:document.getElementById('downloaderAppName').value};
+  config.wplay={packageP2P:document.getElementById('wplayPackageP2P').value,packageIPTV:document.getElementById('wplayPackageIPTV').value,testDuration:parseInt(document.getElementById('wplayTestDuration').value)||4,kratorPackage:document.getElementById('wplayKratorPackage').value};
+  config.okra={testDuration:document.getElementById('okraTestDuration').value,plano:document.getElementById('okraPlano').value,adulto:document.getElementById('okraAdulto').value};
+  config.services={'2':document.getElementById('service2').value,'3':document.getElementById('service3').value,'4':document.getElementById('service4').value};
+  config.menuOptions={iptv:document.getElementById('opt_iptv').checked,sites:document.getElementById('opt_sites').checked,bots:document.getElementById('opt_bots').checked,sistemas:document.getElementById('opt_sistemas').checked,creditoPro:document.getElementById('opt_creditoPro').checked,atendente:document.getElementById('opt_atendente').checked};
+  config.businessHours={enabled:document.getElementById('bhEnabled').checked,start:document.getElementById('bhStart').value,end:document.getElementById('bhEnd').value,days:document.getElementById('bhDays').value.split(',').map(Number).filter(n=>!isNaN(n)),offlineMessage:document.getElementById('bhMessage').value};
+  config.followUp={enabled:document.getElementById('fuEnabled').checked,delayHours:parseInt(document.getElementById('fuDelay').value)||24,message:document.getElementById('fuMessage').value};
+  config.typingDelay=parseInt(document.getElementById('typingDelayField').value)||0;
+  document.getElementById('typingDelay').value=config.typingDelay;
+  config.panel={port:parseInt(document.getElementById('panelPort').value)||3010,username:document.getElementById('panelUsername').value,password:document.getElementById('panelPassword').value};
+  config.rateLimit={enabled:document.getElementById('rlEnabled').checked,maxPerMinute:parseInt(document.getElementById('rlMax').value)||30};
+}
+
+async function saveAll(){
+  collectFormData();
+  try{const r=await api('/api/config',{method:'POST',body:JSON.stringify(config)});const d=await r.json();if(d.success)showToast('✅ Salvo!');else showToast(d.error||'Erro','error')}
+  catch{showToast('Erro ao salvar','error')}
+}
+
+// ---- DASHBOARD ----
+async function loadDashboard(){
+  try{
+    const[statusR,statsR]=await Promise.all([api('/api/status'),api('/api/stats')]);
+    const status=await statusR.json();
+    const stats=await statsR.json();
+    // Status
+    const paused=status.paused;
+    const dotClass=paused?'yellow':status.status==='connected'?'green':status.status==='waiting_qr'?'yellow':'red';
+    const label=paused?'PAUSADO':status.status==='connected'?'ON':status.status==='waiting_qr'?'QR':'OFF';
+    document.getElementById('statStatus').innerHTML=`<span class="status-dot ${dotClass}"></span>${label}`;
+    const pb=document.getElementById('pauseBtn');
+    if(paused){pb.textContent='▶️ Retomar Bot';pb.className='btn btn-success'}else{pb.textContent='⏸️ Pausar Bot';pb.className='btn btn-danger'}
+    // Uptime
+    const up=status.uptime||0;
+    const h=Math.floor(up/3600000);const m=Math.floor((up%3600000)/60000);
+    document.getElementById('statUptime').textContent=h>0?`${h}h ${m}m`:`${m}m`;
+    document.getElementById('statToday').textContent=stats.today||0;
+    document.getElementById('statTests').textContent=status.stats?.tests||0;
+    document.getElementById('statSessions').textContent=status.activeSessions?.length||0;
+    document.getElementById('statMessages').textContent=status.stats?.totalMessages||0;
+    // Chart
+    const dayData=stats.byDay||[];
+    const maxVal=Math.max(...dayData.map(d=>d.count),1);
+    document.getElementById('chartBar').innerHTML=dayData.map(d=>{
+      const pct=Math.max((d.count/maxVal)*100,4);
+      return `<div class="chart-col" style="height:${pct}%"><div class="chart-tip">${escapeHtml(d.day)}: ${d.count}</div></div>`;
+    }).join('');
+    // Pie
+    const colors=['#6c5ce7','#00b894','#e17055','#74b9ff','#fdcb6e','#a29bfe','#fd79a8','#55efc4'];
+    const types=Object.entries(stats.byType||{});
+    document.getElementById('pieChart').innerHTML=types.map(([t,c],i)=>`<div class="pie-item"><div class="pie-color" style="background:${colors[i%colors.length]}"></div>${escapeHtml(t)}: <strong>${c}</strong></div>`).join('');
+  }catch{}
+}
+
+async function togglePause(){
+  try{const r=await api('/api/pause',{method:'POST'});const d=await r.json();showToast(d.paused?'⏸️ Bot pausado':'▶️ Bot retomado');loadDashboard()}catch{showToast('Erro','error')}
+}
+
+// ---- QR CODE ----
+async function loadQR(){
+  try{
+    const r=await api('/api/qrcode');const d=await r.json();
+    const c=document.getElementById('qrContainer');
+    if(d.status==='connected'){c.innerHTML='<p style="color:var(--green);font-size:18px">✅ Bot conectado!</p><p style="color:var(--text2);margin-top:8px">Não é necessário escanear o QR Code.</p>'}
+    else if(d.qrCode){const url=`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(d.qrCode)}`;c.innerHTML=`<img src="${url}" alt="QR Code"><p style="color:var(--text2);margin-top:12px">Escaneie com WhatsApp > Dispositivos conectados</p>`}
+    else{c.innerHTML='<p style="color:var(--text2)">Aguardando QR Code... O bot precisa estar iniciado.</p>'}
+  }catch{document.getElementById('qrContainer').innerHTML='<p style="color:var(--red)">Erro ao carregar</p>'}
+  setTimeout(loadQR,5000);
+}
+
+// ---- SESSIONS ----
+async function loadSessions(){
+  try{
+    const r=await api('/api/sessions');const d=await r.json();
+    const c=document.getElementById('sessionsContainer');
+    if(!d.sessions||d.sessions.length===0){c.innerHTML='<div class="list-item" style="color:var(--text2)">Nenhuma sessão ativa</div>';return}
+    c.innerHTML=d.sessions.map(s=>`<div class="list-item"><span>📱 ${escapeHtml(s.number)} — Step: ${s.step} — ${escapeHtml(s.name)} — ${escapeHtml(s.system)}</span></div>`).join('');
+  }catch{document.getElementById('sessionsContainer').innerHTML='<div class="list-item" style="color:var(--red)">Erro</div>'}
+}
+
+// ---- WHITELIST / BLACKLIST ----
+async function loadWhitelist(){
+  const cfg=config;
+  const c=document.getElementById('whitelistContainer');
+  const list=cfg.whitelist||[];
+  c.innerHTML=list.length===0?'<div class="list-item" style="color:var(--text2)">Vazia (todos aceitos)</div>':list.map(n=>`<div class="list-item"><span>${escapeHtml(n)}</span><button class="btn-icon" onclick="removeWhitelist('${escapeHtml(n)}')" title="Remover">🗑️</button></div>`).join('');
+}
+async function loadBlacklist(){
+  const c=document.getElementById('blacklistContainer');
+  const list=config.blacklist||[];
+  c.innerHTML=list.length===0?'<div class="list-item" style="color:var(--text2)">Vazia</div>':list.map(n=>`<div class="list-item"><span>${escapeHtml(n)}</span><button class="btn-icon" onclick="removeBlacklist('${escapeHtml(n)}')" title="Remover">🗑️</button></div>`).join('');
+}
+async function addWhitelist(){
+  const n=document.getElementById('newWhitelist').value.trim();if(!n)return;
+  await api('/api/whitelist',{method:'POST',body:JSON.stringify({number:n})});
+  document.getElementById('newWhitelist').value='';
+  if(!config.whitelist)config.whitelist=[];if(!config.whitelist.includes(n))config.whitelist.push(n);
+  loadWhitelist();showToast('Adicionado à whitelist');
+}
+async function removeWhitelist(n){
+  await api('/api/whitelist/'+n,{method:'DELETE'});
+  config.whitelist=(config.whitelist||[]).filter(x=>x!==n);
+  loadWhitelist();showToast('Removido da whitelist');
+}
+async function addBlacklist(){
+  const n=document.getElementById('newBlacklist').value.trim();if(!n)return;
+  await api('/api/blacklist',{method:'POST',body:JSON.stringify({number:n})});
+  document.getElementById('newBlacklist').value='';
+  if(!config.blacklist)config.blacklist=[];if(!config.blacklist.includes(n))config.blacklist.push(n);
+  loadBlacklist();showToast('Adicionado à blacklist');
+}
+async function removeBlacklist(n){
+  await api('/api/blacklist/'+n,{method:'DELETE'});
+  config.blacklist=(config.blacklist||[]).filter(x=>x!==n);
+  loadBlacklist();showToast('Removido da blacklist');
+}
+
+// ---- TEST HISTORY ----
+async function loadTestHistory(){
+  try{
+    const r=await api('/api/test-history');const d=await r.json();
+    const c=document.getElementById('testHistoryContainer');
+    if(!d.history||d.history.length===0){c.innerHTML='<div class="list-item" style="color:var(--text2)">Nenhum teste registrado</div>';return}
+    c.innerHTML=d.history.map(h=>`<div class="list-item"><span>📱 ${escapeHtml(h.number)} — ${escapeHtml(h.date)}</span><button class="btn-icon" onclick="resetTest('${escapeHtml(h.number)}')" title="Liberar">🔓</button></div>`).join('');
+  }catch{}
+}
+async function resetTest(num){
+  await api('/api/test-history/'+num,{method:'DELETE'});
+  showToast('Teste liberado para '+num);loadTestHistory();
+}
+async function clearAllTests(){
+  if(!confirm('Limpar TODO o histórico de testes?'))return;
+  await api('/api/test-history',{method:'DELETE'});
+  showToast('Histórico limpo');loadTestHistory();
+}
+
+// ---- MASS MESSAGE ----
+async function sendMass(){
+  const msg=document.getElementById('massMessage').value.trim();
+  if(!msg)return showToast('Digite a mensagem','error');
+  const nums=document.getElementById('massNumbers').value.split(',').map(s=>s.trim()).filter(Boolean);
+  document.getElementById('massResult').textContent='Enviando...';
+  try{
+    const r=await api('/api/send-message',{method:'POST',body:JSON.stringify({numbers:nums.length?nums:null,message:msg})});
+    const d=await r.json();
+    document.getElementById('massResult').textContent=`✅ Enviado: ${d.sent} | ❌ Falhou: ${d.failed}`;
+    showToast('Envio concluído');
+  }catch{document.getElementById('massResult').textContent='Erro ao enviar';showToast('Erro','error')}
+}
+
+// ---- LOGS ----
+async function loadLogs(){
+  try{const r=await api('/api/logs');const d=await r.json();const l=document.getElementById('logList');if(!d.logs||d.logs.length===0){l.innerHTML='<div class="log-entry">Nenhum log</div>';return}l.innerHTML=d.logs.map(l=>`<div class="log-entry">${escapeHtml(l)}</div>`).join('')}catch{document.getElementById('logList').innerHTML='<div class="log-entry" style="color:var(--red)">Erro</div>'}
+}
+function exportLogs(){window.open(API_BASE+'/api/logs/export?token='+authToken)}
+</script>
+</body>
+</html>

@@ -5,6 +5,7 @@
   "scripts": {
     "start": "node src/bot.js",
     "start:cloud": "node src/bot-cloud.js",
+    "panel": "node -e \"require('./src/panel').startPanel()\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

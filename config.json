@@ -1,0 +1,136 @@
+{
+  "botName": "VoidAccess Tech",
+  "sessionTimeout": 10,
+  "maxRetries": 5,
+  "greetingKeywords": [
+    "oi",
+    "olá",
+    "ola",
+    "oii",
+    "teste",
+    "testar"
+  ],
+  "greetingPartialKeywords": [
+    "valor",
+    "plano"
+  ],
+  "cancelKeywords": [
+    "cancelar",
+    "voltar",
+    "sair",
+    "menu",
+    "0"
+  ],
+  "messages": {
+    "welcome": "🚀 *Bem-vindo à VoidAccess Tech!*\n\nAutomatizamos negócios e aumentamos suas vendas com tecnologia.\n\nEscolha o que você quer fazer hoje:\n\n1️⃣ 📺 Assistir canais e filmes (IPTV)\n2️⃣ 🌐 Criar um site profissional\n3️⃣ 🤖 Automatizar meu WhatsApp (Bot)\n4️⃣ 💻 Criar sistema para meu negócio\n5️⃣ 💰 Testar o CréditoPro (empréstimos)\n6️⃣ 👤 Falar com um especialista\n\n_Digite o número da opção desejada_",
+    "iptv": "📺 *IPTV - VoidAccess Tech*\n\nTemos os melhores canais, filmes e séries para você!\n\n💰 *Nossos planos:*\n• Mensal: *R$ 25,00*\n• Trimestral: *R$ 65,00*\n\n🔥 Quer fazer um *teste grátis* antes de assinar?\n\n1️⃣ ✅ Sim, quero testar!\n2️⃣ 💳 Quero assinar direto\n\n_Digite o número da opção_",
+    "askName": "😄 Qual o seu *nome*?",
+    "askBrand": "Prazer, *{name}*! 😄\n\n📺 Qual a *marca ou modelo* da sua TV?\n\nExemplos: TCL, Xiaomi, Sony, Philips, AOC, Hisense, Philco, Semp, TV Box...\n\nDigite a marca:",
+    "androidDetected": "✅ Sua TV usa *Android*!\n\n📲 Baixe o app *Pop Player* na sua TV pela Play Store.\n\nDepois de instalar, envie uma *foto da tela* mostrando o MAC do seu aparelho 📸",
+    "rokuSuccess": "✅ Sua TV usa *Roku OS*!\n\n📲 Baixe o app *Krator+* na sua Roku TV pela loja de apps.\n\nDepois de instalar, abra o app e use os dados abaixo:\n\n👤 Usuário: *{username}*\n🔑 Senha: *{password}*{accessInfo}\n\n⏰ Seu teste é válido por algumas horas. Aproveite!\n\nGostou? Envie \"oi\" para ver nossos planos! 😉",
+    "downloaderSuccess": "📺 Para sua TV *{brand}*, siga os passos abaixo:\n\n1️⃣ Baixe o app *Downloader* na loja de apps da sua TV\n2️⃣ Abra o app e digite o código: *3964281*\n3️⃣ *Aceite todas as permissões* que aparecerem\n4️⃣ O app *Xcloud* será instalado automaticamente!\n\nDepois de instalar, abra o *Xcloud* e use os dados abaixo:\n\n👤 Usuário: *{username}*\n🔑 Senha: *{password}*{accessInfo}\n\n⏰ Seu teste é válido por algumas horas. Aproveite!\n\nGostou? Envie \"oi\" para ver nossos planos! 😉",
+    "androidSuccess": "✅ *Teste criado com sucesso!*\n\nMAC detectado: *{mac}*\n\nAbra o app *Pop Player* na sua TV e faça o seguinte:\n1. *Feche e abra o app novamente*\n2. O MAC já está cadastrado!\n\n⏰ Seu teste é válido por algumas horas. Aproveite!\n\nGostou? Envie \"oi\" para ver nossos planos! 😉",
+    "androidSuccessManual": "✅ *Teste criado com sucesso!*\n\nAbra o app *Pop Player* na sua TV e faça o seguinte:\n1. *Feche e abra o app novamente*\n2. O MAC já está cadastrado!\n\n⏰ Seu teste é válido por algumas horas. Aproveite!\n\nGostou? Envie \"oi\" para ver nossos planos! 😉",
+    "sessionExpired": "⏰ Sua sessão expirou por inatividade. Envie *oi* para recomeçar!",
+    "resetMessage": "🔄 Atendimento reiniciado!Envie *oi* para começar novamente.",
+    "unknownMessage": "⚡ Olá! Eu sou o assistente da *VoidAccess Tech*.\n\nTrabalhamos com IPTV, Sites, Bots e Sistemas.\n\nEnvie *oi* para ver nossas opções! 🚀",
+    "errorGeneric": "❌ Ocorreu um erro ao criar seu teste. Tente novamente mais tarde.",
+    "attendant": "👤 Certo! Um *atendente* entrará em contato em breve.\n\nObrigado por entrar em contato com a *VoidAccess Tech*! ⚡",
+    "testAlreadyDone": "⚠️ Você já realizou um teste em *{date}*.\n\nCada número tem direito a *1 teste gratuito*.\n\n💰 Gostou? Envie *2* para ver nossos planos de assinatura!",
+    "creditoProAskName": "💳 *CréditoPro*Vamos criar sua conta de teste!Qual o seu *nome*?",
+    "creditoProAskEmail": "Prazer, *{name}*! 😄Agora me informe seu *e-mail*:",
+    "creditoProSuccess": "✅ *Conta CréditoPro criada com sucesso!*\n\n🌐 Acesse: https://creditoprocom.com/\n📧 E-mail: *{email}*\n🔑 Senha: *{password}*\n\nEnvie *oi* para voltar ao menu principal.",
+    "serviceAskName": "🔧 *{service}*\n\nPara enviar seu pedido, preciso de algumas informações.\n\nQual o seu *nome*?",
+    "serviceAskDescription": "Prazer, *{name}*! 😄\n\nAgora descreva brevemente o que você *precisa* para o seu projeto de *{service}*:\n\n_(Ex: quero um site para minha loja, preciso de um bot para WhatsApp, etc.)_",
+    "serviceSuccess": "✅ *Pedido registrado com sucesso!*\n\n📋 *Resumo:*\n• Serviço: *{service}*\n• Nome: *{name}*\n• Descrição: _{description}_\n\nUm *especialista* da VoidAccess Tech entrará em contato em breve para discutir seu projeto! ⚡\n\nObrigado pela confiança! 🙏",
+    "iptvPlans": "💳 Ótimo! Para assinar, escolha seu plano:\n\n1️⃣ 📅 Mensal (R$ 25,00)\n2️⃣ 📅 Trimestral (R$ 65,00)\n\n_Um atendente entrará em contato para finalizar!_",
+    "blocked": "Numero bloqueado.",
+    "outsideHours": "Fora do horario."
+  },
+  "tvBrands": {
+    "tcl": "roku",
+    "hisense": "roku",
+    "philco": "roku",
+    "aoc": "roku",
+    "semp": "roku",
+    "xiaomi": "android",
+    "sony": "android",
+    "philips": "android",
+    "motorola": "android",
+    "jvc": "android",
+    "toshiba": "android",
+    "multilaser": "android",
+    "nokia": "android",
+    "tv box": "android",
+    "tvbox": "android",
+    "mi box": "android",
+    "mibox": "android",
+    "fire stick": "android",
+    "firestick": "android",
+    "fire tv": "android",
+    "samsung": "downloader",
+    "lg": "downloader",
+    "panasonic": "downloader"
+  },
+  "services": {
+    "2": "Criação de Sites",
+    "3": "Criação de Bots / Automações",
+    "4": "Desenvolvimento de Sistemas"
+  },
+  "menuOptions": {
+    "iptv": true,
+    "sites": true,
+    "bots": true,
+    "sistemas": true,
+    "creditoPro": true,
+    "atendente": true
+  },
+  "wplay": {
+    "packageP2P": "64399dca5ea59e8a1de2b083",
+    "packageIPTV": "30",
+    "testDuration": 4,
+    "kratorPackage": "1"
+  },
+  "okra": {
+    "testDuration": "3",
+    "plano": "56",
+    "adulto": "0"
+  },
+  "downloader": {
+    "code": "3964281",
+    "appName": "Xcloud"
+  },
+  "typingDelay": 1500,
+  "testLimitPerNumber": 1,
+  "businessHours": {
+    "enabled": false,
+    "timezone": "America/Sao_Paulo",
+    "start": "08:00",
+    "end": "22:00",
+    "days": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "offlineMessage": "Nosso horario e de seg a sab das 08h as 22h."
+  },
+  "rateLimit": {
+    "enabled": false,
+    "maxPerMinute": 30
+  },
+  "followUp": {
+    "enabled": false,
+    "delayHours": 24,
+    "message": "Voce testou nosso IPTV. Gostou? Envie oi!"
+  },
+  "whitelist": [],
+  "blacklist": [],
+  "panel": {
+    "port": 3010,
+    "username": "admin",
+    "password": "admin123"
+  }
+}

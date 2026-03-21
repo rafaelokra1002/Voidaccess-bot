@@ -13,24 +13,39 @@ const { createTest: createWplayTest } = require('./services/wplay.service');
 const { registerMac } = require('./services/pop.service');
 const { createUser: createCreditoProUser } = require('./services/creditopro.service');
 const validateMac = require('./utils/validateMac');
+const { startPanel, readConfig, botState, checkRateLimit, isWithinBusinessHours } = require('./panel');
 console.log('[BOOT] Todos os módulos carregados');
 
-// sessões dos usuários
-const sessions = {};
+function getConfig() {
+  return readConfig();
+}
 
-// controle de testes por número (limite 1 por número)
-const testHistory = {};
+// Usar estado compartilhado com o painel
+const sessions = botState.sessions;
+const testHistory = botState.testHistory;
 
-// timeout de sessão (10 minutos)
-const SESSION_TIMEOUT = 10 * 60 * 1000;
-
-// arquivo de log
 const LOG_FILE = path.join(__dirname, '..', 'atendimentos.log');
 
-// Controle de reconexão
-const MAX_RETRIES = 5;
 let retryCount = 0;
 let sock;
+
+// Follow-up scheduler
+const followUpScheduled = new Set();
+function scheduleFollowUp(jid) {
+  if (followUpScheduled.has(jid)) return;
+  const cfg = getConfig();
+  if (!cfg.followUp?.enabled) return;
+  followUpScheduled.add(jid);
+  const delay = (cfg.followUp.delayHours || 24) * 60 * 60 * 1000;
+  setTimeout(async () => {
+    followUpScheduled.delete(jid);
+    try {
+      const currentCfg = getConfig();
+      if (!currentCfg.followUp?.enabled) return;
+      await sock.sendMessage(jid, { text: currentCfg.followUp.message || 'Gostou do teste? Envie oi!' });
+    } catch (e) { console.error('Erro follow-up:', e.message); }
+  }, delay);
+}
 
 // Filtrar log spam do Baileys (Closing session, Connection closed)
 const originalStdoutWrite = process.stdout.write.bind(process.stdout);
@@ -54,27 +69,22 @@ function resetSession(user) {
 
 function refreshTimeout(user) {
   if (sessions[user]?.timeout) clearTimeout(sessions[user].timeout);
+  const cfg = getConfig();
+  const timeout = (cfg.sessionTimeout || 10) * 60 * 1000;
+  const expiredMsg = cfg.messages?.sessionExpired || '⏰ Sua sessão expirou por inatividade. Envie *oi* para recomeçar!';
   sessions[user].timeout = setTimeout(async () => {
     if (sessions[user] && sessions[user].step !== 0) {
-      await sock.sendMessage(user, { text: '⏰ Sua sessão expirou por inatividade. Envie *oi* para recomeçar!' });
+      await sock.sendMessage(user, { text: expiredMsg });
       resetSession(user);
     }
-  }, SESSION_TIMEOUT);
+  }, timeout);
 }
 
-// Mapeamento de marcas para sistema
-const TV_BRANDS = {
-  'tcl': 'roku', 'hisense': 'roku', 'philco': 'roku', 'aoc': 'roku', 'semp': 'roku',
-  'xiaomi': 'android', 'sony': 'android', 'philips': 'android', 'motorola': 'android',
-  'jvc': 'android', 'toshiba': 'android', 'multilaser': 'android', 'nokia': 'android',
-  'tv box': 'android', 'tvbox': 'android', 'mi box': 'android', 'mibox': 'android',
-  'fire stick': 'android', 'firestick': 'android', 'fire tv': 'android',
-  'samsung': 'downloader', 'lg': 'downloader', 'panasonic': 'downloader',
-};
-
 function detectSystem(brand) {
+  const cfg = getConfig();
+  const tvBrands = cfg.tvBrands || {};
   const input = brand.toLowerCase();
-  for (const [key, system] of Object.entries(TV_BRANDS)) {
+  for (const [key, system] of Object.entries(tvBrands)) {
     if (input.includes(key)) return system;
   }
   return null;
@@ -120,28 +130,34 @@ async function startBot() {
   // Conexão
   sock.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect, qr } = update;
+    const cfg = getConfig();
+    const MAX_RETRIES = cfg.maxRetries || 5;
 
     if (qr) {
+      botState.qrCode = qr;
+      botState.status = 'waiting_qr';
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qr)}`;
       console.log('\n========================================');
-      console.log('📲 ESCANEIE O QR CODE COM SEU WHATSAPP');
+      console.log('📲 ESCANEIE O QR CODE (ou veja no painel)');
       console.log('========================================');
-      console.log('Abra este link no navegador para ver o QR Code:');
       console.log(qrUrl);
-      console.log('========================================');
-      console.log('Escaneie com WhatsApp > Dispositivos conectados > Conectar dispositivo');
-      console.log('========================================\n');
       console.log('========================================\n');
     }
 
     if (connection === 'open') {
       retryCount = 0;
+      botState.status = 'connected';
+      botState.qrCode = null;
+      botState.startedAt = botState.startedAt || Date.now();
+      botState.sock = sock;
       console.log('\n✅ Bot conectado ao WhatsApp!');
       console.log('⚡ VoidAccess Tech Bot - Baileys');
       console.log('📡 Pronto para receber mensagens!\n');
     }
 
     if (connection === 'close') {
+      botState.status = 'disconnected';
+      botState.sock = null;
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       const reason = DisconnectReason[statusCode] || statusCode;
       console.log(`❌ Conexão fechada: ${reason} (${statusCode})`);
@@ -161,7 +177,9 @@ async function startBot() {
         console.log(`🔄 Reconectando... tentativa ${retryCount}/${MAX_RETRIES}`);
         setTimeout(startBot, 3000);
       } else {
-        console.log('💀 Máximo de tentativas atingido. Reinicie o bot manualmente.');
+        console.log('💀 Máximo de tentativas atingido. Reiniciando em 30s...');
+        retryCount = 0;
+        setTimeout(startBot, 30000);
       }
     }
   });
@@ -174,6 +192,13 @@ async function startBot() {
     // Em Baileys v7, type pode não existir - aceitar qualquer tipo
     if (type && type !== 'notify') return;
 
+    // Carrega config atualizada a cada lote de mensagens
+    const cfg = getConfig();
+    const SESSION_TIMEOUT = (cfg.sessionTimeout || 10) * 60 * 1000;
+    const msgs = cfg.messages || {};
+    const menuOpts = cfg.menuOptions || {};
+    const services = cfg.services || {};
+
     for (const msg of messages) {
       try {
         if (msg.key.fromMe) continue;
@@ -183,6 +208,35 @@ async function startBot() {
 
         // Ignorar mensagens de grupos
         if (user.endsWith('@g.us')) continue;
+
+        // Pause check
+        if (botState.paused) continue;
+
+        // Blacklist check
+        const userNumber = user.replace('@s.whatsapp.net', '');
+        if ((cfg.blacklist || []).length > 0 && cfg.blacklist.includes(userNumber)) {
+          continue;
+        }
+
+        // Whitelist check (se não vazia, só permite listados)
+        if ((cfg.whitelist || []).length > 0 && !cfg.whitelist.includes(userNumber)) {
+          continue;
+        }
+
+        // Rate limit check
+        if (!checkRateLimit(user)) {
+          continue;
+        }
+
+        // Business hours check
+        if (!isWithinBusinessHours()) {
+          const offMsg = cfg.businessHours?.offlineMessage || msgs.outsideHours || 'Estamos fora do horário de atendimento.';
+          await sock.sendMessage(user, { text: offMsg });
+          continue;
+        }
+
+        // Contagem de estatísticas
+        botState.stats.totalMessages = (botState.stats.totalMessages || 0) + 1;
 
         // Debug: ver mensagem bruta
         console.log('📨 MSG BRUTA:', JSON.stringify(msg.message, null, 2)?.substring(0, 500));
@@ -231,66 +285,62 @@ async function startBot() {
         const session = sessions[user];
         refreshTimeout(user);
 
-        // indicador "digitando..."
+        // indicador "digitando..." com delay configurável
         await sendPresence(user);
+        const typingDelay = cfg.typingDelay || 0;
+        if (typingDelay > 0) await new Promise(r => setTimeout(r, typingDelay));
 
         console.log(`Mensagem de ${user}: ${text || (hasMedia ? '[IMAGEM]' : '[OUTRO]')}`);
 
         // COMANDO CANCELAR / VOLTAR
-        if (['cancelar', 'voltar', 'sair', 'menu', '0'].includes(textLower) && session.step !== 0) {
+        const cancelWords = cfg.cancelKeywords || ['cancelar', 'voltar', 'sair', 'menu', '0'];
+        if (cancelWords.includes(textLower) && session.step !== 0) {
           resetSession(user);
           refreshTimeout(user);
-          await sendText(user, '🔄 Atendimento reiniciado!\n\nEnvie *oi* para começar novamente.');
+          await sendText(user, msgs.resetMessage || '🔄 Atendimento reiniciado!\n\nEnvie *oi* para começar novamente.');
           continue;
         }
 
-        // INICIO - Menu Principal VoidAccess Tech
-        if (textLower === 'oi' || textLower === 'olá' || textLower === 'ola' || textLower === 'oii'
-          || textLower.includes('valor') || textLower.includes('plano')
-          || textLower === 'teste' || textLower === 'testar') {
+        // INICIO - Menu Principal
+        const greetExact = cfg.greetingKeywords || ['oi', 'olá', 'ola', 'oii', 'teste', 'testar'];
+        const greetPartial = cfg.greetingPartialKeywords || ['valor', 'plano'];
+        const isGreeting = greetExact.includes(textLower) || greetPartial.some(w => textLower.includes(w));
+        if (isGreeting) {
           session.step = 1;
-
-          await sendText(user,
-            `🚀 *Bem-vindo à VoidAccess Tech!*\n\nAutomatizamos negócios e aumentamos suas vendas com tecnologia.\n\nEscolha o que você quer fazer hoje:\n\n1️⃣ 📺 Assistir canais e filmes (IPTV)\n2️⃣ 🌐 Criar um site profissional\n3️⃣ 🤖 Automatizar meu WhatsApp (Bot)\n4️⃣ 💻 Criar sistema para meu negócio\n5️⃣ 💰 Testar o CréditoPro (empréstimos)\n6️⃣ 👤 Falar com um especialista\n\n_Digite o número da opção desejada_`
-          );
+          await sendText(user, msgs.welcome || 'Bem-vindo! Envie o número da opção desejada.');
           continue;
         }
 
         // MENU PRINCIPAL - Opção 1: IPTV
-        if (session.step === 1 && textLower === '1') {
+        if (session.step === 1 && textLower === '1' && menuOpts.iptv !== false) {
           session.step = 10;
-
-          await sendText(user,
-            `📺 *IPTV - VoidAccess Tech*\n\nTemos os melhores canais, filmes e séries para você!\n\n💰 *Nossos planos:*\n• Mensal: *R$ 25,00*\n• Trimestral: *R$ 65,00*\n\n🔥 Quer fazer um *teste grátis* antes de assinar?\n\n1️⃣ ✅ Sim, quero testar!\n2️⃣ 💳 Quero assinar direto\n\n_Digite o número da opção_`
-          );
+          await sendText(user, msgs.iptv || 'Escolha: 1) Testar 2) Assinar');
           continue;
         }
 
         // MENU PRINCIPAL - Opções 2, 3, 4: Serviços
         if (session.step === 1 && ['2', '3', '4'].includes(textLower)) {
-          const servicos = {
-            '2': 'Criação de Sites',
-            '3': 'Criação de Bots / Automações',
-            '4': 'Desenvolvimento de Sistemas',
-          };
-          session.serviceType = servicos[textLower];
+          const optMap = { '2': 'sites', '3': 'bots', '4': 'sistemas' };
+          if (menuOpts[optMap[textLower]] === false) continue;
+          session.serviceType = services[textLower] || 'Serviço';
           session.step = 20;
-          await sendText(user, `🔧 *${session.serviceType}*\n\nPara enviar seu pedido, preciso de algumas informações.\n\nQual o seu *nome*?`);
+          const svcMsg = (msgs.serviceAskName || '🔧 *{service}*\n\nQual o seu *nome*?').replace(/\{service\}/g, session.serviceType);
+          await sendText(user, svcMsg);
           continue;
         }
 
         // MENU PRINCIPAL - Opção 5: CreditoPro
-        if (session.step === 1 && textLower === '5') {
+        if (session.step === 1 && textLower === '5' && menuOpts.creditoPro !== false) {
           session.step = 30;
-          await sendText(user, '💳 *CréditoPro*\n\nVamos criar sua conta de teste!\n\nQual o seu *nome*?');
+          await sendText(user, msgs.creditoProAskName || '💳 *CréditoPro*\n\nQual o seu *nome*?');
           continue;
         }
 
         // MENU PRINCIPAL - Opção 6: Falar com atendente
-        if (session.step === 1 && textLower === '6') {
+        if (session.step === 1 && textLower === '6' && menuOpts.atendente !== false) {
           logAtendimento(user, 'ATENDENTE', 'Cliente solicitou atendimento humano');
           session.step = 0;
-          await sendText(user, '👤 Certo! Um *atendente* entrará em contato em breve.\n\nObrigado por entrar em contato com a *VoidAccess Tech*! ⚡');
+          await sendText(user, msgs.attendant || '👤 Um atendente entrará em contato em breve.');
           continue;
         }
 
@@ -300,7 +350,8 @@ async function startBot() {
         if (session.step === 30) {
           session.name = text;
           session.step = 31;
-          await sendText(user, `Prazer, *${text}*! 😄\n\nAgora me informe seu *e-mail*:`);
+          const emailMsg = (msgs.creditoProAskEmail || 'Prazer, *{name}*! 😄\n\nAgora me informe seu *e-mail*:').replace(/\{name\}/g, text);
+          await sendText(user, emailMsg);
           continue;
         }
 
@@ -324,7 +375,10 @@ async function startBot() {
             const userEmail = result.user?.email || session.email;
             const passInfo = result.generatedPassword || result.password || 'Verifique seu e-mail';
 
-            await sendText(user, `✅ *Conta CréditoPro criada com sucesso!*\n\n🌐 Acesse: https://creditoprocom.com/\n📧 E-mail: *${userEmail}*\n🔑 Senha: *${passInfo}*\n\nEnvie *oi* para voltar ao menu principal.`);
+            const cpMsg = (msgs.creditoProSuccess || '✅ Conta criada!\n📧 E-mail: *{email}*\n🔑 Senha: *{password}*')
+              .replace(/\{email\}/g, userEmail)
+              .replace(/\{password\}/g, passInfo);
+            await sendText(user, cpMsg);
           } catch (error) {
             console.error('Erro CreditoPro:', error.message);
             session.step = 0;
@@ -339,7 +393,10 @@ async function startBot() {
         if (session.step === 20) {
           session.name = text;
           session.step = 21;
-          await sendText(user, `Prazer, *${text}*! 😄\n\nAgora descreva brevemente o que você *precisa* para o seu projeto de *${session.serviceType}*:\n\n_(Ex: quero um site para minha loja, preciso de um bot para WhatsApp, etc.)_`);
+          const descMsg = (msgs.serviceAskDescription || 'Prazer, *{name}*! Descreva o que precisa para *{service}*:')
+            .replace(/\{name\}/g, text)
+            .replace(/\{service\}/g, session.serviceType);
+          await sendText(user, descMsg);
           continue;
         }
 
@@ -348,7 +405,11 @@ async function startBot() {
           session.description = text;
           logAtendimento(user, session.serviceType.toUpperCase(), `Nome: ${session.name} | Descrição: ${session.description}`);
           session.step = 0;
-          await sendText(user, `✅ *Pedido registrado com sucesso!*\n\n📋 *Resumo:*\n• Serviço: *${session.serviceType}*\n• Nome: *${session.name}*\n• Descrição: _${session.description}_\n\nUm *especialista* da VoidAccess Tech entrará em contato em breve para discutir seu projeto! ⚡\n\nObrigado pela confiança! 🙏`);
+          const svcSuccessMsg = (msgs.serviceSuccess || '✅ Pedido registrado!\n• Serviço: *{service}*\n• Nome: *{name}*\n• Descrição: _{description}_')
+            .replace(/\{service\}/g, session.serviceType)
+            .replace(/\{name\}/g, session.name)
+            .replace(/\{description\}/g, session.description);
+          await sendText(user, svcSuccessMsg);
           continue;
         }
 
@@ -356,13 +417,20 @@ async function startBot() {
 
         // IPTV - ACEITOU TESTE
         if (session.step === 10 && textLower === '1') {
+          // Verifica limite de testes por número
+          const testLimit = cfg.testLimitPerNumber || 1;
+          const userTests = Object.values(testHistory).filter((v, i, a) => {
+            // conta quantos testes esse user já fez
+            return false; // placeholder
+          });
           if (testHistory[user]) {
             const quando = new Date(testHistory[user]).toLocaleString('pt-BR');
-            await sendText(user, `⚠️ Você já realizou um teste em *${quando}*.\n\nCada número tem direito a *1 teste gratuito*.\n\n💰 Gostou? Envie *2* para ver nossos planos de assinatura!`);
+            const alreadyMsg = (msgs.testAlreadyDone || '⚠️ Você já realizou um teste em *{date}*.').replace(/\{date\}/g, quando);
+            await sendText(user, alreadyMsg);
             continue;
           }
           session.step = 6;
-          await sendText(user, '😄 Qual o seu *nome*?');
+          await sendText(user, msgs.askName || '😄 Qual o seu *nome*?');
           continue;
         }
 
@@ -370,16 +438,15 @@ async function startBot() {
         if (session.step === 6) {
           session.name = text;
           session.step = 2;
-          await sendText(user, `Prazer, *${text}*! 😄\n\n📺 Qual a *marca ou modelo* da sua TV?\n\nExemplos: TCL, Xiaomi, Sony, Philips, AOC, Hisense, Philco, Semp, TV Box...\n\nDigite a marca:`);
+          const brandMsg = (msgs.askBrand || 'Prazer, *{name}*! Qual a *marca ou modelo* da sua TV?').replace(/\{name\}/g, text);
+          await sendText(user, brandMsg);
           continue;
         }
 
         // IPTV - QUER ASSINAR
         if (session.step === 10 && textLower === '2') {
           session.step = 0;
-          await sendText(user,
-            `💳 Ótimo! Para assinar, escolha seu plano:\n\n1️⃣ 📅 Mensal (R$ 25,00)\n2️⃣ 📅 Trimestral (R$ 65,00)\n\n_Um atendente entrará em contato para finalizar!_`
-          );
+          await sendText(user, msgs.iptvPlans || '💳 Um atendente entrará em contato para finalizar!');
           continue;
         }
 
@@ -393,6 +460,8 @@ async function startBot() {
               await sendPresence(user);
               const credentials = await createWplayTest(session.name);
               testHistory[user] = Date.now();
+              botState.stats.tests = (botState.stats.tests || 0) + 1;
+              scheduleFollowUp(user);
               logAtendimento(user, 'DOWNLOADER', `Nome: ${session.name} | TV: ${text} | User: ${credentials.username}`);
               session.step = 0;
 
@@ -400,10 +469,15 @@ async function startBot() {
                 ? `\n🔢 Código de acesso: *${credentials.access_code}*`
                 : '';
 
-              await sendText(user, `📺 Para sua TV *${text}*, siga os passos abaixo:\n\n1️⃣ Baixe o app *Downloader* na loja de apps da sua TV\n2️⃣ Abra o app e digite o código: *3964281*\n3️⃣ *Aceite todas as permissões* que aparecerem\n4️⃣ O app *Xcloud* será instalado automaticamente!\n\nDepois de instalar, abra o *Xcloud* e use os dados abaixo:\n\n👤 Usuário: *${credentials.username}*\n🔑 Senha: *${credentials.password}*${accessInfo}\n\n⏰ Seu teste é válido por algumas horas. Aproveite!\n\nGostou? Envie "oi" para ver nossos planos! 😉`);
+              const dlMsg = (msgs.downloaderSuccess || 'Dados: {username} / {password}')
+                .replace(/\{brand\}/g, text)
+                .replace(/\{username\}/g, credentials.username)
+                .replace(/\{password\}/g, credentials.password)
+                .replace(/\{accessInfo\}/g, accessInfo);
+              await sendText(user, dlMsg);
             } catch (error) {
               console.error('Erro ao criar teste Downloader:', error.message);
-              await sendText(user, '❌ Ocorreu um erro ao criar seu teste. Tente novamente mais tarde.');
+              await sendText(user, msgs.errorGeneric || '❌ Ocorreu um erro ao criar seu teste.');
             }
             continue;
           }
@@ -414,6 +488,8 @@ async function startBot() {
               await sendPresence(user);
               const credentials = await createWplayTest(session.name);
               testHistory[user] = Date.now();
+              botState.stats.tests = (botState.stats.tests || 0) + 1;
+              scheduleFollowUp(user);
               logAtendimento(user, 'ROKU', `Nome: ${session.name} | User: ${credentials.username}`);
               session.step = 0;
 
@@ -421,10 +497,14 @@ async function startBot() {
                 ? `\n🔢 Código de acesso: ${credentials.access_code}`
                 : '';
 
-              await sendText(user, `✅ Sua TV usa *Roku OS*!\n\n📲 Baixe o app *Krator+* na sua Roku TV pela loja de apps.\n\nDepois de instalar, abra o app e use os dados abaixo:\n\n👤 Usuário: *${credentials.username}*\n🔑 Senha: *${credentials.password}*${accessInfo}\n\n⏰ Seu teste é válido por algumas horas. Aproveite!\n\nGostou? Envie "oi" para ver nossos planos! 😉`);
+              const rkMsg = (msgs.rokuSuccess || 'Dados: {username} / {password}')
+                .replace(/\{username\}/g, credentials.username)
+                .replace(/\{password\}/g, credentials.password)
+                .replace(/\{accessInfo\}/g, accessInfo);
+              await sendText(user, rkMsg);
             } catch (error) {
               console.error('Erro ao criar teste Roku:', error.message);
-              await sendText(user, '❌ Ocorreu um erro ao criar seu teste. Tente novamente mais tarde.');
+              await sendText(user, msgs.errorGeneric || '❌ Ocorreu um erro ao criar seu teste.');
             }
             continue;
           }
@@ -432,7 +512,7 @@ async function startBot() {
           if (system === 'android') {
             session.step = 3;
             session.system = 'android';
-            await sendText(user, '✅ Sua TV usa *Android*!\n\n📲 Baixe o app *Pop Player* na sua TV pela Play Store.\n\nDepois de instalar, envie uma *foto da tela* mostrando o MAC do seu aparelho 📸');
+            await sendText(user, msgs.androidDetected || '✅ Sua TV usa *Android*! Envie uma foto do MAC.');
             continue;
           }
 
@@ -476,10 +556,13 @@ async function startBot() {
             await registerMac(mac, credentials.username, credentials.password, session.name);
 
             testHistory[user] = Date.now();
+            botState.stats.tests = (botState.stats.tests || 0) + 1;
+            scheduleFollowUp(user);
             logAtendimento(user, 'ANDROID', `Nome: ${session.name} | MAC: ${mac} | User: ${credentials.username}`);
             session.step = 0;
 
-            await sendText(user, `✅ *Teste criado com sucesso!*\n\nMAC detectado: *${mac}*\n\nAbra o app *Pop Player* na sua TV e faça o seguinte:\n1. *Feche e abra o app novamente*\n2. O MAC já está cadastrado!\n\n⏰ Seu teste é válido por algumas horas. Aproveite!\n\nGostou? Envie "oi" para ver nossos planos! 😉`);
+            const andMsg = (msgs.androidSuccess || '✅ Teste criado! MAC: *{mac}*').replace(/\{mac\}/g, mac);
+            await sendText(user, andMsg);
           } catch (error) {
             console.error('Erro OCR:', error.message);
             session.step = 3;
@@ -500,10 +583,12 @@ async function startBot() {
               await registerMac(mac, credentials.username, credentials.password, session.name);
 
               testHistory[user] = Date.now();
+              botState.stats.tests = (botState.stats.tests || 0) + 1;
+              scheduleFollowUp(user);
               logAtendimento(user, 'ANDROID', `Nome: ${session.name} | MAC: ${mac} | User: ${credentials.username}`);
               session.step = 0;
 
-              await sendText(user, `✅ *Teste criado com sucesso!*\n\nAbra o app *Pop Player* na sua TV e faça o seguinte:\n1. *Feche e abra o app novamente*\n2. O MAC já está cadastrado!\n\n⏰ Seu teste é válido por algumas horas. Aproveite!\n\nGostou? Envie "oi" para ver nossos planos! 😉`);
+              await sendText(user, msgs.androidSuccessManual || '✅ Teste criado! Abra o Pop Player e aproveite.');
             } catch (error) {
               console.error('Erro ao processar teste:', error.message);
               session.step = 0;
@@ -517,7 +602,7 @@ async function startBot() {
 
         // MENSAGEM NÃO RECONHECIDA
         if (session.step === 0) {
-          await sendText(user, '⚡ Olá! Eu sou o assistente da *VoidAccess Tech*.\n\nTrabalhamos com IPTV, Sites, Bots e Sistemas.\n\nEnvie *oi* para ver nossas opções! 🚀');
+          await sendText(user, msgs.unknownMessage || '⚡ Envie *oi* para ver nossas opções!');
         }
       } catch (err) {
         console.error('Erro ao processar mensagem:', err.message);
@@ -526,8 +611,17 @@ async function startBot() {
   });
 }
 
-// Iniciar bot
+// Iniciar painel e bot
+startPanel();
 startBot().catch(err => {
   console.error('Erro fatal ao iniciar bot:', err.message);
-  process.exit(1);
+  setTimeout(() => startBot().catch(console.error), 10000);
+});
+
+// Evitar que erros não tratados matem o processo
+process.on('uncaughtException', (err) => {
+  console.error('⚠️ Erro não capturado:', err.message);
+});
+process.on('unhandledRejection', (err) => {
+  console.error('⚠️ Promise rejeitada:', err?.message || err);
 });

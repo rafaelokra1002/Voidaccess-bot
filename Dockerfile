@@ -11,8 +11,9 @@ RUN npm install --production && rm -rf ./node_modules/libsignal && cp -r ./temp-
 
 # Copiar código fonte
 COPY src/ ./src/
+COPY config.json ./
 COPY eng.traineddata ./
 
-EXPOSE 3333
+EXPOSE 3010
 
 CMD ["node", "src/bot.js"]
