@@ -22,13 +22,15 @@ const botState = {
 
 const rateLimitMap = new Map();
 
-// CORS para permitir o frontend no Vercel
-app.use(cors({
-  origin: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'x-auth-token'],
-  credentials: true,
-}));
+// CORS — handler manual no topo para garantir preflight
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type,x-auth-token');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  next();
+});
 
 app.use(express.json());
 
