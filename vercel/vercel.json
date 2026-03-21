@@ -2,6 +2,8 @@
   "buildCommand": null,
   "outputDirectory": "public",
   "rewrites": [
+    { "source": "/api/:path*", "destination": "https://voidaccess-bot.onrender.com/api/:path*" },
+    { "source": "/health", "destination": "https://voidaccess-bot.onrender.com/health" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

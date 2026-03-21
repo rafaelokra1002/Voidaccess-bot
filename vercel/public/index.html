@@ -125,7 +125,6 @@
     <h2>VoidAccess Tech</h2>
     <p>Acesse o painel de controle do bot</p>
     <div class="login-error" id="loginError">Credenciais inválidas</div>
-    <input type="text" id="loginApiBase" placeholder="URL da API (ex: https://meubot.onrender.com)" style="font-size:12px">
     <input type="text" id="loginUser" placeholder="Usuário" autocomplete="username">
     <input type="password" id="loginPass" placeholder="Senha" autocomplete="current-password">
     <button class="btn btn-primary" onclick="doLogin()">Entrar</button>
@@ -399,22 +398,18 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const API_BASE=localStorage.getItem('api_base')||'';
+const API_BASE='';
 let config={};
 let authToken=localStorage.getItem('panel_token')||'';
 
 // Check auth on load
 if(authToken){document.getElementById('loginOverlay').style.display='none';document.getElementById('sidebar').style.display='';document.getElementById('mainContent').style.display='';init()}
-// Pre-fill API base on login page
-document.getElementById('loginApiBase').value=API_BASE;
 
 async function doLogin(){
   const u=document.getElementById('loginUser').value;
   const p=document.getElementById('loginPass').value;
-  const base=document.getElementById('loginApiBase').value.replace(/\/+$/,'');
-  localStorage.setItem('api_base',base);
   try{
-    const r=await fetch((base||'')+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
     const d=await r.json();
     if(d.success){
       authToken=d.token;localStorage.setItem('panel_token',authToken);
